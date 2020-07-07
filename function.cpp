@@ -19,6 +19,8 @@
 // IN THE SOFTWARE.
 
 #include "binaryninjaapi.h"
+#include "mediumlevelilinstruction.h"
+#include <cstring>
 
 using namespace BinaryNinja;
 using namespace std;
@@ -354,7 +356,64 @@ PossibleValueSet PossibleValueSet::FromAPIObject(BNPossibleValueSet& value)
 		for (size_t i = 0; i < value.count; i++)
 			result.valueSet.insert(value.valueSet[i]);
 	}
+
+	result.count = value.count;
 	BNFreePossibleValueSet(&value);
+	return result;
+}
+
+
+BNPossibleValueSet PossibleValueSet::ToAPIObject()
+{
+	BNPossibleValueSet result;
+	result.state = state;
+	result.value = value;
+	result.offset = offset;
+	result.count = 0;
+
+	if ((state == SignedRangeValue) || (state == UnsignedRangeValue))
+	{
+		result.ranges = new BNValueRange[ranges.size()];
+		result.count = ranges.size();
+		for (size_t i = 0; i < ranges.size(); i++)
+			result.ranges[i] = ranges[i];
+	}
+	else
+	{
+		result.ranges = nullptr;
+	}
+
+	if (state == LookupTableValue)
+	{
+		result.table = new BNLookupTableEntry[table.size()];
+		result.count = table.size();
+		for (size_t i = 0; i < table.size(); i++)
+		{
+			result.table[i].fromValues = new int64_t[table[i].fromValues.size()];
+			memcpy(result.table[i].fromValues, &table[i].fromValues[0], sizeof(int64_t) *
+				table[i].fromValues.size());
+			result.table[i].fromCount = table[i].fromValues.size();
+			result.table[i].toValue = table[i].toValue;
+		}
+	}
+	else
+	{
+		result.table = nullptr;
+	}
+
+	if ((state == InSetOfValues) || (state == NotInSetOfValues))
+	{
+		result.valueSet = new int64_t[valueSet.size()];
+		result.count = valueSet.size();
+		size_t i = 0;
+		for (auto j : valueSet)
+			result.valueSet[i++] = j;
+	}
+	else
+	{
+		result.valueSet = nullptr;
+	}
+
 	return result;
 }
 
@@ -1711,6 +1770,20 @@ Ref<FlowGraph> Function::GetUnresolvedStackAdjustmentGraph()
 	return new CoreFlowGraph(graph);
 }
 
+
+void Function::SetSSAVariableValue(SSAVariable& var, PossibleValueSet& value) {
+	// BNPossibleValueSet userValueSet = value.ToAPIObject();
+	// BNArchitectureAndAddress defSiteObj;
+	// defSiteObj.arch = defSite.arch->GetObject();
+	// defSiteObj.adddress = defSite.address;
+	// BNSetSSAVariableValueNew(m_object, defSiteObj, &userValueSet);
+}
+
+
+void Function::ClearUserInformedValues() 
+{
+	BNClearUserInformedValues(m_object);
+}
 
 void Function::RequestDebugReport(const string& name)
 {
