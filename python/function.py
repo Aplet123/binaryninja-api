@@ -395,27 +395,31 @@ class PossibleValueSet(object):
 			result.value = self.value
 		elif self.type == RegisterValueType.StackFrameOffset:
 			result.offset = self.value
-		elif self.type == RegisterValueType.SignedRangedValue:
+		elif self.type == RegisterValueType.SignedRangeValue:
 			result.offst = self.value
-			result.ranges = []
+			result.ranges = (core.BNValueRange * self.count)()
 			for i in range(0, self.count):
 				start = self.ranges[i].start
 				end = self.ranges[i].end
-				step = self.ranges[i].step
 				if start & (1 << 63):
 					start |= ~((1 << 63) - 1)
 				if end & (1 << 63):
 					end |= ~((1 << 63) - 1)
-				result.ranges.append(ValueRange(start, end, step))
+				value_range = core.BNValueRange()
+				value_range.start = start
+				value_range.end = end
+				value_range.step = self.ranges[i].step
+				result.ranges[i] = value_range
 			result.count = self.count
-		elif self.type == RegisterValueType.UnsignedRangedValue:
+		elif self.type == RegisterValueType.UnsignedRangeValue:
 			result.offset = self.value
-			result.ranges = []
+			result.ranges = (core.BNValueRange * self.count)()
 			for i in range(0, self.count):
-				start = self.ranges[i].start
-				end = self.ranges[i].end
-				step = self.ranges[i].step
-				result.ranges.append(ValueRange(start, end, step))
+				value_range = core.BNValueRange()
+				value_range.start = self.ranges[i].start
+				value_range.end = self.ranges[i].end
+				value_range.step = self.ranges[i].step
+				result.ranges[i] = value_range
 			result.count = self.count
 		elif self.type == RegisterValueType.LookupTableValue:
 			result.table = []
@@ -428,9 +432,12 @@ class PossibleValueSet(object):
 				result.table.append(LookupTableEntry(from_list, result.table[i].toValue))
 			result.count = self.count
 		elif (self.type == RegisterValueType.InSetOfValues) or (self.type == RegisterValueType.NotInSetOfValues):
-			result.values = set()
-			for i in range(self.count):
-				result.values.add(self.valueSet[i])
+			values = (ctypes.c_long * self.count)()
+			i = 0
+			for value in self.values:
+				values[i] = value
+				i += 1
+			result.valueSet = ctypes.cast(values, ctypes.POINTER(ctypes.c_long))
 			result.count = self.count
 		return result
 
@@ -519,6 +526,10 @@ class PossibleValueSet(object):
 		""" """
 		return self._count
 
+	@count.setter
+	def count(self, value):
+		self._count = value
+
 	@classmethod
 	def undetermined(self):
 		return PossibleValueSet()
@@ -546,17 +557,37 @@ class PossibleValueSet(object):
 		return result
 
 	@classmethod
-	def signed_ranged_value(self, ranges):
+	def signed_range_value(self, ranges):
 		result = PossibleValueSet()
-		result.type = RegisterValueType.SignedRangedValue
+		result.value = 0
+		result.type = RegisterValueType.SignedRangeValue
 		result.ranges = ranges
+		result.count = len(ranges)
 		return result
 
 	@classmethod
-	def unsigned_ranged_value(self, ranges):
+	def unsigned_range_value(self, ranges):
 		result = PossibleValueSet()
-		result.type = RegisterValueType.UnsignedRangedValue
+		result.value = 0
+		result.type = RegisterValueType.UnsignedRangeValue
 		result.ranges = ranges
+		result.count = len(ranges)
+		return result
+
+	@classmethod
+	def in_set_of_values(self, values):
+		result = PossibleValueSet()
+		result.type = RegisterValueType.InSetOfValues
+		result.values = set(values)
+		result.count = len(values)
+		return result
+
+	@classmethod 
+	def not_in_set_of_values(self, values):
+		result = PossibleValueSet()
+		result.type = RegisterValueType.NotInSetOfValues
+		result.values = set(values)
+		result.count = len(values)
 		return result
 
 	@classmethod
