@@ -3163,7 +3163,7 @@ __attribute__ ((format (printf, 1, 2)))
 
 		Ref<FlowGraph> GetUnresolvedStackAdjustmentGraph();
 
-		void SetSSAVariableValue(SSAVariable& var, PossibleValueSet& value);
+		void SetVariableValue(SSAVariable& var, PossibleValueSet& value);
 		void ClearUserInformedValues();
 
 		void RequestDebugReport(const std::string& name);

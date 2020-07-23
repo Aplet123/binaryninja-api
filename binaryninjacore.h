@@ -3368,7 +3368,7 @@ __attribute__ ((format (printf, 1, 2)))
 
 	BINARYNINJACOREAPI BNFlowGraph* BNGetUnresolvedStackAdjustmentGraph(BNFunction* func);
 
-	BINARYNINJACOREAPI void BNSetSSAVariableValue(BNFunction *func, BNVariable* var, BNArchitectureAndAddress *defSite, BNPossibleValueSet* value);
+	BINARYNINJACOREAPI void BNSetVariableValue(BNFunction *func, BNVariable* var, BNArchitectureAndAddress *defSite, BNPossibleValueSet* value);
 	BINARYNINJACOREAPI void BNClearUserInformedValues(BNFunction *func);
 
 	BINARYNINJACOREAPI void BNRequestFunctionDebugReport(BNFunction* func, const char* name);

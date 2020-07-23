@@ -2557,19 +2557,22 @@ class Function(object):
 			arch = self.arch
 		return core.BNIsCallInstruction(self.handle, arch.handle, addr)
 
-	def set_ssa_var_value(self, ssa_var, value):
-		var_def = self.mlil.get_ssa_var_definition(ssa_var)
-		if var_def is None:
-			raise ValueError("Could not get memory definition for SSAVariable")
+	def set_var_value(self, var, value):
+		var_defs = self.mlil.get_var_definitions(var)
+		if var_defs is None:
+			raise ValueError("Could not get memory definition for Variable")
+		elif len(var_defs) > 1:
+			raise ValueError("Multiple definitions for Variable found")
 		def_site = core.BNArchitectureAndAddress()
 		def_site.arch = self.arch.handle
-		def_site.address = var_def.address
+		instr = var_defs[0]
+		def_site.address = instr.address
 
 		var_data = core.BNVariable()
-		var_data.type = ssa_var.var.source_type
-		var_data.index = ssa_var.var.index
-		var_data.storage = ssa_var.var.storage
-		core.BNSetSSAVariableValue(self.handle, var_data, def_site, value._to_api_object())
+		var_data.type = var.source_type
+		var_data.index = var.index
+		var_data.storage = var.storage
+		core.BNSetVariableValue(self.handle, var_data, def_site, value._to_api_object())
 
 	def clear_user_informed_values(self):
 		core.BNClearUserInformedValues(self.handle)

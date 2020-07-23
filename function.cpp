@@ -1771,12 +1771,12 @@ Ref<FlowGraph> Function::GetUnresolvedStackAdjustmentGraph()
 }
 
 
-void Function::SetSSAVariableValue(SSAVariable& var, PossibleValueSet& value) {
+void Function::SetVariableValue(SSAVariable& var, PossibleValueSet& value) {
 	// BNPossibleValueSet userValueSet = value.ToAPIObject();
 	// BNArchitectureAndAddress defSiteObj;
 	// defSiteObj.arch = defSite.arch->GetObject();
 	// defSiteObj.adddress = defSite.address;
-	// BNSetSSAVariableValueNew(m_object, defSiteObj, &userValueSet);
+	// BNSSAVariableValueNew(m_object, defSiteObj, &userValueSet);
 }
 
 
