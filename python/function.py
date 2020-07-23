@@ -2560,7 +2560,7 @@ class Function(object):
 	def set_var_value(self, var, value):
 		var_defs = self.mlil.get_var_definitions(var)
 		if var_defs is None:
-			raise ValueError("Could not get memory definition for Variable")
+			raise ValueError("Could not get definition for Variable")
 		elif len(var_defs) > 1:
 			raise ValueError("Multiple definitions for Variable found")
 		def_site = core.BNArchitectureAndAddress()
@@ -2574,8 +2574,25 @@ class Function(object):
 		var_data.storage = var.storage
 		core.BNSetVariableValue(self.handle, var_data, def_site, value._to_api_object())
 
-	def clear_user_informed_values(self):
-		core.BNClearUserInformedValues(self.handle)
+	def clear_informed_var_value(self, var):
+		var_defs = self.mlil.get_var_definitions(var)
+		if var_defs is None:
+			raise ValueError("Could not get definition for Variable")
+		elif len(var_defs) > 1:
+			raise ValueError("Multiple definitions for Variable found")
+		def_site = core.BNArchitectureAndAddress()
+		def_site.arch = self.arch.handle
+		instr = var_defs[0]
+		def_site.address = instr.address
+
+		var_data = core.BNVariable()
+		var_data.type = var.source_type
+		var_data.index = var.index 
+		var_data.storage = var.storage
+		core.BNClearInformedVariableValue(self.handle, var_data, def_site)
+
+	def clear_informed_var_values(self):
+		core.BNClearInformedVariableValues(self.handle)
 
 	def request_debug_report(self, name):
 		core.BNRequestFunctionDebugReport(self.handle, name)

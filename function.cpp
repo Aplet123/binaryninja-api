@@ -363,7 +363,7 @@ PossibleValueSet PossibleValueSet::FromAPIObject(BNPossibleValueSet& value)
 }
 
 
-BNPossibleValueSet PossibleValueSet::ToAPIObject()
+BNPossibleValueSet PossibleValueSet::ToAPIObject ()
 {
 	BNPossibleValueSet result;
 	result.state = state;
@@ -1771,19 +1771,65 @@ Ref<FlowGraph> Function::GetUnresolvedStackAdjustmentGraph()
 }
 
 
-void Function::SetVariableValue(SSAVariable& var, PossibleValueSet& value) {
-	// BNPossibleValueSet userValueSet = value.ToAPIObject();
-	// BNArchitectureAndAddress defSiteObj;
-	// defSiteObj.arch = defSite.arch->GetObject();
-	// defSiteObj.adddress = defSite.address;
-	// BNSSAVariableValueNew(m_object, defSiteObj, &userValueSet);
-}
-
-
-void Function::ClearUserInformedValues() 
+void Function::SetVariableValue(const Variable& var, PossibleValueSet& value)
 {
-	BNClearUserInformedValues(m_object);
+	auto mlil = GetMediumLevelIL();
+	auto varDefs = mlil->GetVariableDefinitions(var);
+	if (varDefs.size() == 0)
+	{
+		LogError("Could not get definition for Variable");
+	} 
+	else if (varDefs.size() > 1)
+	{
+		LogError("Multiple definitions for Variable found");
+	}
+	auto instr = mlil->GetInstruction(*varDefs.begin());
+	auto defSite = BNArchitectureAndAddress();
+	defSite.arch = GetArchitecture()->m_object;
+	defSite.address = instr.address;
+
+	auto var_data = BNVariable();
+	var_data.type = var.type;
+	var_data.index = var.index;
+	var_data.storage = var.storage;
+
+	auto valueObj = value.ToAPIObject();
+
+	BNSetVariableValue(m_object, &var_data, &defSite, &valueObj);
 }
+
+
+void Function::ClearInformedVariableValue(const Variable& var)
+{
+	auto mlil = GetMediumLevelIL();
+	auto varDefs = mlil->GetVariableDefinitions(var);
+	if (varDefs.size() == 0)
+	{
+		LogError("Could not get definition for Variable");
+	} 
+	else if (varDefs.size() > 1)
+	{
+		LogError("Multiple definitions for Variable found");
+	}
+	auto instr = mlil->GetInstruction(*varDefs.begin());
+	auto defSite = BNArchitectureAndAddress();
+	defSite.arch = GetArchitecture()->m_object;
+	defSite.address = instr.address;
+
+	auto var_data = BNVariable();
+	var_data.type = var.type;
+	var_data.index = var.index;
+	var_data.storage = var.storage;
+
+	BNClearInformedVariableValue(m_object, &var_data, &defSite);
+}
+
+
+void Function::ClearInformedVariableValues() 
+{
+	BNClearInformedVariableValues(m_object);
+}
+
 
 void Function::RequestDebugReport(const string& name)
 {
