@@ -1771,22 +1771,31 @@ Ref<FlowGraph> Function::GetUnresolvedStackAdjustmentGraph()
 }
 
 
-void Function::SetVariableValue(const Variable& var, PossibleValueSet& value)
+void Function::SetVariableValue(const Variable& var, uint64_t defAddr, PossibleValueSet& value)
 {
 	auto mlil = GetMediumLevelIL();
 	auto varDefs = mlil->GetVariableDefinitions(var);
 	if (varDefs.size() == 0)
 	{
 		LogError("Could not get definition for Variable");
+		return;
 	} 
-	else if (varDefs.size() > 1)
+	bool found = false;
+	for (const auto& site : varDefs)
 	{
-		LogError("Multiple definitions for Variable found");
+		if (site == defAddr)
+		{
+			found = true;
+			break;
+		}
 	}
-	auto instr = mlil->GetInstruction(*varDefs.begin());
+	if (!found)
+	{
+		LogError("Could not find definition for variable at given address");
+	}
 	auto defSite = BNArchitectureAndAddress();
 	defSite.arch = GetArchitecture()->m_object;
-	defSite.address = instr.address;
+	defSite.address = defAddr;
 
 	auto var_data = BNVariable();
 	var_data.type = var.type;
@@ -1799,7 +1808,7 @@ void Function::SetVariableValue(const Variable& var, PossibleValueSet& value)
 }
 
 
-void Function::ClearInformedVariableValue(const Variable& var)
+void Function::ClearInformedVariableValue(const Variable& var, uint64_t defAddr)
 {
 	auto mlil = GetMediumLevelIL();
 	auto varDefs = mlil->GetVariableDefinitions(var);
@@ -1807,14 +1816,22 @@ void Function::ClearInformedVariableValue(const Variable& var)
 	{
 		LogError("Could not get definition for Variable");
 	} 
-	else if (varDefs.size() > 1)
+	bool found = false;
+	for (auto site : varDefs)
 	{
-		LogError("Multiple definitions for Variable found");
+		if (site == defAddr)
+		{
+			found = true;
+			break;
+		}
 	}
-	auto instr = mlil->GetInstruction(*varDefs.begin());
+	if (!found)
+	{
+		LogError("Could not find definition for variable at given address");
+	}
 	auto defSite = BNArchitectureAndAddress();
 	defSite.arch = GetArchitecture()->m_object;
-	defSite.address = instr.address;
+	defSite.address = defAddr;
 
 	auto var_data = BNVariable();
 	var_data.type = var.type;
